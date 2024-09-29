@@ -24,13 +24,15 @@ function M.setup()
 
 	-- Function to toggle the terminal
 	function M.toggle_my_term()
-		if my_term then
-			print("Toggling terminal") -- Debugging message
+		-- Make sure my_term is initialized before using it
+		initialize_my_term()
+
+		if my_term:is_open() then
+			print("Toggling terminal (closing)") -- Debugging message
 			my_term:toggle()
 		else
-			print("my_term is nil, initializing") -- Debugging message
-			initialize_my_term()
-			my_term:open()
+			print("Toggling terminal (opening)") -- Debugging message
+			my_term:toggle()
 		end
 	end
 
@@ -44,8 +46,11 @@ function M.setup()
 
 		-- Optionally hide the terminal after running tt-setup
 		vim.defer_fn(function()
-			print("Hiding the terminal after tt-setup") -- Debugging message
-			my_term:toggle() -- Hide the terminal without closing it
+			-- Make sure the terminal instance is still valid
+			if my_term:is_open() then
+				print("Hiding the terminal after tt-setup") -- Debugging message
+				my_term:toggle() -- Hide the terminal without closing it
+			end
 		end, 100) -- Adjust the delay as needed
 	end
 
@@ -67,10 +72,9 @@ function M.setup()
 	vim.api.nvim_create_autocmd({ "BufEnter" }, {
 		callback = function()
 			if my_term then
-				-- Check if the terminal is still alive; if not, reinitialize
+				-- Check if the terminal is still alive; if not, skip toggling
 				if not my_term:is_open() then
-					print("Re-initializing terminal after buffer switch")
-					my_term:open()
+					print("Terminal was closed, skipping re-initialization")
 				end
 			end
 		end,
